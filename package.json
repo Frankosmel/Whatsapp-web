@@ -1,0 +1,21 @@
+{
+  "name": "wa-panel-cron",
+  "version": "1.0.0",
+  "description": "Panel web para WhatsApp: QR, grupos, envíos, one-shot y campañas CRON",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "postinstall": "mkdir -p uploads || true"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.13",
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1",
+    "nanoid": "^5.0.7",
+    "node-cron": "^4.2.1",
+    "puppeteer": "^24.16.1",
+    "qrcode": "^1.5.3",
+    "whatsapp-web.js": "^1.32.0"
+  }
+}
