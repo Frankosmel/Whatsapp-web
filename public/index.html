@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>WA Panel — QR, Grupos, Envíos, One-shot y Campañas CRON</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <div class="logo">WA</div>
+      <h1>WhatsApp Panel</h1>
+    </div>
+    <div class="status">Estado: <span class="pill" id="pill">desconocido</span></div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="tab-qr" class="active">Estado / QR</button>
+    <button data-tab="tab-groups">Grupos</button>
+    <button data-tab="tab-send">Enviar ahora</button>
+    <button data-tab="tab-schedule">Programar</button>
+    <button data-tab="tab-campaigns">Campañas CRON</button>
+  </nav>
+
+  <main class="container">
+    <!-- Estado / QR -->
+    <section id="tab-qr" class="tab active">
+      <div class="card">
+        <h2>Conexión de WhatsApp</h2>
+        <p>Escanee el código QR si se solicita (solo la primera vez o si la sesión caducó).</p>
+        <div class="qr-wrap">
+          <img id="qr" alt="QR" />
+        </div>
+        <div class="actions">
+          <button id="btn-refresh-qr">Refrescar QR</button>
+          <button class="secondary" id="btn-refresh-status">Actualizar estado</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Grupos -->
+    <section id="tab-groups" class="tab">
+      <div class="card">
+        <h2>Grupos</h2>
+        <div class="row">
+          <input id="search" placeholder="Buscar por nombre o ID..." />
+          <button id="btn-reload-groups">Recargar</button>
+        </div>
+        <div id="groups" class="groups"></div>
+      </div>
+    </section>
+
+    <!-- Enviar ahora -->
+    <section id="tab-send" class="tab">
+      <div class="card">
+        <h2>Enviar ahora</h2>
+        <div class="grid">
+          <div>
+            <label>Selecciona grupos</label>
+            <div id="select-groups" class="checklist"></div>
+            <details class="paste">
+              <summary>Pegar IDs manualmente</summary>
+              <textarea id="ids-paste" rows="4" placeholder="1203...@g.us, 1203...@g.us"></textarea>
+              <button id="btn-apply-ids">Aplicar IDs pegados</button>
+            </details>
+          </div>
+
+          <div>
+            <label>Mensaje (caption opcional para la primera imagen)</label>
+            <textarea id="msg" rows="6" placeholder="Escribe tu mensaje..."></textarea>
+
+            <label>Imágenes (múltiples)</label>
+            <input id="images" type="file" multiple accept="image/*" />
+
+            <div class="row">
+              <div>
+                <label>Delay entre imágenes (ms)</label>
+                <input id="mediaDelayMs" type="number" value="2000" min="0" />
+              </div>
+              <div>
+                <label>Delay entre grupos (ms, min 1500)</label>
+                <input id="groupDelayMs" type="number" value="2000" min="1500" />
+              </div>
+            </div>
+
+            <div class="actions">
+              <button id="btn-send">Enviar</button>
+            </div>
+
+            <div id="send-result" class="log"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Programar one-shot -->
+    <section id="tab-schedule" class="tab">
+      <div class="card">
+        <h2>Programar publicación (fecha/hora)</h2>
+        <div class="grid">
+          <div>
+            <label>Selecciona grupos</label>
+            <div id="select-groups-s" class="checklist"></div>
+            <details class="paste">
+              <summary>Pegar IDs manualmente</summary>
+              <textarea id="ids-paste-s" rows="4" placeholder="1203...@g.us, 1203...@g.us"></textarea>
+              <button id="btn-apply-ids-s">Aplicar IDs pegados</button>
+            </details>
+          </div>
+
+          <div>
+            <label>Mensaje (caption opcional)</label>
+            <textarea id="msg-s" rows="6" placeholder="Escribe tu mensaje..."></textarea>
+
+            <label>Imágenes (múltiples)</label>
+            <input id="images-s" type="file" multiple accept="image/*" />
+
+            <div class="row">
+              <div>
+                <label>Delay entre imágenes (ms)</label>
+                <input id="mediaDelayMs-s" type="number" value="2000" min="0" />
+              </div>
+              <div>
+                <label>Delay entre grupos (ms, min 1500)</label>
+                <input id="groupDelayMs-s" type="number" value="2000" min="1500" />
+              </div>
+            </div>
+
+            <label>Fecha y hora</label>
+            <input id="when" type="datetime-local" />
+
+            <div class="actions">
+              <button id="btn-schedule">Programar</button>
+              <button class="secondary" id="btn-reload-schedules">Recargar lista</button>
+            </div>
+
+            <div class="card subtile">
+              <h3>Programadas</h3>
+              <div id="schedules" class="log"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Campañas CRON -->
+    <section id="tab-campaigns" class="tab">
+      <div class="card">
+        <h2>Campañas CRON (recurrentes)</h2>
+        <div class="grid">
+          <!-- Formulario de creación/edición -->
+          <div>
+            <label>Nombre</label>
+            <input id="c-name" type="text" placeholder="Mi campaña" />
+
+            <label>Selecciona grupos</label>
+            <div id="select-groups-c" class="checklist"></div>
+            <details class="paste">
+              <summary>Pegar IDs manualmente</summary>
+              <textarea id="ids-paste-c" rows="4" placeholder="1203...@g.us, 1203...@g.us"></textarea>
+              <button id="btn-apply-ids-c">Aplicar IDs pegados</button>
+            </details>
+
+            <label>Mensaje</label>
+            <textarea id="c-message" rows="6" placeholder="Escribe tu mensaje..."></textarea>
+
+            <label>Imágenes (múltiples)</label>
+            <input id="c-images" type="file" multiple accept="image/*" />
+
+            <div class="row">
+              <div>
+                <label>Delay entre imágenes (ms)</label>
+                <input id="c-mediaDelayMs" type="number" value="2000" min="0" />
+              </div>
+              <div>
+                <label>Delay entre grupos (ms, min 1500)</label>
+                <input id="c-groupDelayMs" type="number" value="2000" min="1500" />
+              </div>
+            </div>
+
+            <label>Expresión CRON</label>
+            <input id="c-cron" type="text" placeholder="*/20 * * * *  (cada 20 minutos)" />
+
+            <label>Zona horaria</label>
+            <select id="c-tz">
+              <option>America/New_York</option>
+              <option>America/Bogota</option>
+              <option>America/Mexico_City</option>
+              <option>America/Argentina/Buenos_Aires</option>
+              <option>Europe/Madrid</option>
+              <option>UTC</option>
+            </select>
+
+            <div class="actions">
+              <button id="btn-c-save">Guardar campaña</button>
+              <button class="secondary" id="btn-c-reset">Limpiar formulario</button>
+            </div>
+
+            <div id="c-save-result" class="log"></div>
+          </div>
+
+          <!-- Lista de campañas -->
+          <div>
+            <div class="actions">
+              <button id="btn-c-reload">Recargar campañas</button>
+            </div>
+            <div id="campaigns" class="log"></div>
+            <div class="muted" style="margin-top:8px">
+              Ayuda CRON rápida:<br />
+              <code>*/20 * * * *</code> → cada 20 minutos<br />
+              <code>0 */2 * * *</code> → cada 2 horas (en el minuto 0)<br />
+              <code>0 9 * * 1-5</code> → 09:00 de lunes a viernes<br />
+              Recuerda seleccionar la <b>zona horaria</b>.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">© WA Panel — Hecho con ❤️</footer>
+  <script src="/app.js"></script>
+</body>
+</html>
