@@ -38,8 +38,11 @@ app.use(express.json({ limit: '15mb' }));
 app.use('/', express.static(path.join(__dirname, 'public')));
 
 // Carpeta de subidas (sirve archivos estáticos)
-const UPLOAD_DIR = path.join(__dirname, 'uploads');
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
+// (FIX) Respeta UPLOAD_DIR del entorno si existe; si no, usa ./uploads
+const UPLOAD_DIR = process.env.UPLOAD_DIR
+  ? path.resolve(process.env.UPLOAD_DIR)
+  : path.join(__dirname, 'uploads');
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 app.use('/uploads', express.static(UPLOAD_DIR));
 
 // -------------------------------- Multer (subidas) ------------------------------------
@@ -69,15 +72,29 @@ const client = new Client({
     dataPath: process.env.WA_SESSION_PATH || path.join(__dirname, '.wa-session')
   }),
   puppeteer: {
-    executablePath: puppeteer.executablePath(),
+    // (FIX) Forzar Chrome del sistema (variables de entorno o fallback)
+    executablePath:
+      process.env.CHROME_BIN ||
+      process.env.PUPPETEER_EXECUTABLE_PATH ||
+      '/usr/bin/google-chrome',
+
     headless: true,
+
+    // (FIX) Flags necesarios en VPS/containers
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
-      '--disable-gpu'
+      '--no-zygote',
+      '--disable-gpu',
+      '--disable-features=NetworkService,NetworkServiceInProcess',
+      '--disable-features=site-per-process',
+      '--ignore-certificate-errors',
+      '--window-size=1920,1080'
     ]
   },
+
+  // Mantengo tu configuración (remote cache)
   webVersionCache: { type: 'remote' }
 });
 
@@ -326,8 +343,6 @@ app.delete('/api/schedules/:id', requireApiKey, (req, res) => {
   const nx = arr.filter(x => x.id !== id);
   if (nx.length === arr.length) return res.status(404).json({ error: 'No existe.' });
   saveSchedules(nx);
-  const t = SCHEDULES.get(id);
-  if (t) clearTimeout(t);
   SCHEDULES.delete(id);
   res.json({ ok: true });
 });
